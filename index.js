@@ -1,27 +1,29 @@
 const nodemailer = require("nodemailer");
-const http = require("https");
+const https = require("https");
+const config = require("./config.js");
 
 let transporter = nodemailer.createTransport({
     service: "qq",
     port: 465,
     secureConnection: true,
     auth: {
-        user: "891729308@qq.com", // generated ethereal user
-        pass: "" // generated ethereal password
+        user: config.from,
+        pass: config.secret
     }
 });
 
 // setup email data with unicode symbols
 let mailOptions = {
-    from: '"意大利炮" <891729308@qq.com>', // sender address
-    to: "githubonly@163.com", // list of receivers
-    subject: "--监控提醒--", // Subject line
-    text: "一切准备就绪，开始交易", // plain text body
-    html: "<b>一切准备就绪，开始交易</b>" // html body
+    from: `"意大利炮" <${config.from}>`,
+    to: config.to,
+    subject: "--监控提醒--",
+    html: "<b>一切准备就绪，开始交易</b>"
 };
 
+let alertEmailSent = false;
+
 function getKlineData() {
-    http.get("https://api.huobi.vn/market/history/kline?symbol=btcusdt&period=4hour&size=20", res => {
+    https.get(config.url, res => {
         let data = "";
         res.on("data", trunk => {
             data += trunk;
@@ -42,6 +44,7 @@ function sendMail({ content, subject }) {
             return console.log(error);
         }
         console.log("Message sent: %s", info.messageId);
+        alertEmailSent = true;
     });
 }
 
@@ -57,29 +60,29 @@ function dealKlineData(data) {
         }
     }
     let msg = "";
-    console.log("===============================================");
     if (data[0].close < min) {
         msg = "跌破趋势值，开空";
-        console.log("跌破趋势值，开空");
     }
     if (data[0].close > max) {
         msg = "突破趋势值， 开多";
-        console.log("突破趋势值， 开多");
     }
-    if (msg) {
+    if (msg && !alertEmailSent) {
         sendMail({ content: msg });
+        setTimeout(() => {
+            alertEmailSent = false;
+        }, config.emailAlertInterval);
     }
+    console.log(new Date().toDateString(), " ===============================================");
     console.log("max:", max);
     console.log("min:", min);
     console.log("current:", data[0].close);
-    console.log("===============================================");
 }
 
 setInterval(() => {
     getKlineData();
-}, 5000);
+}, config.queryInterval);
 
 sendMail({ content: "应用启动", subject: "开始搬砖" });
 setInterval(() => {
-    sendMail({ content: "应用保持", subject: "我还活着" });
-}, 5 * 3600 * 1000);
+    sendMail({ content: "持续搬砖中", subject: "我还活着" });
+}, config.healthCheckInterval);
