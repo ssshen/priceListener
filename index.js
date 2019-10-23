@@ -47,7 +47,8 @@ function sendMail({ content, subject }) {
         alertEmailSent = true;
     });
 }
-
+let currentLow = 0;
+let emailAlertTimeout;
 function dealKlineData(data) {
     let max = Number.MIN_VALUE;
     let min = Number.MAX_VALUE;
@@ -60,19 +61,24 @@ function dealKlineData(data) {
         }
     }
     let msg = "";
-    if (data[0].close < min) {
+    if (currentLow != data[0].low) {
+        alertEmailSent = false;
+        emailAlertTimeout && clearTimeout(emailAlertTimeout);
+        currentLow = data[0].low;
+    }
+    if (currentLow <= min) {
         msg = "跌破趋势值，开空";
     }
-    if (data[0].close > max) {
-        msg = "突破趋势值， 开多";
+    if (currentLow >= max) {
+        msg = "突破趋势值，开多";
     }
     if (msg && !alertEmailSent) {
-        sendMail({ content: msg });
-        setTimeout(() => {
+        sendMail({ content: msg, subject: "--监控提醒--" });
+        emailAlertTimeout = setTimeout(() => {
             alertEmailSent = false;
         }, config.emailAlertInterval);
     }
-    console.log(new Date().toDateString(), " ===============================================");
+    console.log(new Date().toLocaleString(), " ===============================================");
     console.log("max:", max);
     console.log("min:", min);
     console.log("current:", data[0].close);
