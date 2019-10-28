@@ -14,7 +14,7 @@ let transporter = nodemailer.createTransport({
 
 // setup email data with unicode symbols
 let mailOptions = {
-    from: `"意大利炮" <${config.from}>`,
+    from: `"price listener" <${config.from}>`,
     to: config.to,
     subject: "--监控提醒--",
     html: "<b>一切准备就绪，开始交易</b>"
@@ -44,10 +44,10 @@ function sendMail({ content, subject }) {
             return console.log(error);
         }
         console.log("Message sent: %s", info.messageId);
-        alertEmailSent = true;
     });
 }
 let currentLow = 0;
+let currentHigh = 0;
 let emailAlertTimeout;
 function dealKlineData(data) {
     let max = Number.MIN_VALUE;
@@ -66,14 +66,20 @@ function dealKlineData(data) {
         emailAlertTimeout && clearTimeout(emailAlertTimeout);
         currentLow = data[0].low;
     }
+    if (currentHigh != data[0].high) {
+        alertEmailSent = false;
+        emailAlertTimeout && clearTimeout(emailAlertTimeout);
+        currentHigh = data[0].high;
+    }
     if (currentLow <= min) {
         msg = "跌破趋势值，开空";
     }
-    if (currentLow >= max) {
+    if (currentHigh >= max) {
         msg = "突破趋势值，开多";
     }
     if (msg && !alertEmailSent) {
         sendMail({ content: msg, subject: "--监控提醒--" });
+        alertEmailSent = true;
         emailAlertTimeout = setTimeout(() => {
             alertEmailSent = false;
         }, config.emailAlertInterval);
@@ -88,7 +94,4 @@ setInterval(() => {
     getKlineData();
 }, config.queryInterval);
 
-sendMail({ content: "应用启动", subject: "开始搬砖" });
-setInterval(() => {
-    sendMail({ content: "持续搬砖中", subject: "我还活着" });
-}, config.healthCheckInterval);
+sendMail({ content: "start engine", subject: "开始搬砖" });
