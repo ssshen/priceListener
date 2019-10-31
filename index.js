@@ -72,10 +72,10 @@ function dealKlineData(data) {
         currentHigh = data[0].high;
     }
     if (currentLow <= min) {
-        msg = "跌破趋势值，开空";
+        msg = `跌破趋势值，开空\n-------------\ncurrentLow:${currentLow}\nmin:${min}\nmax:${max}`;
     }
     if (currentHigh >= max) {
-        msg = "突破趋势值，开多";
+        msg = `突破趋势值，开多\n-------------\ncurrentHigh:${currentHigh}\nmin:${min}\nmax:${max}`;
     }
     if (msg && !alertEmailSent) {
         sendMail({ content: msg, subject: "--监控提醒--" });
