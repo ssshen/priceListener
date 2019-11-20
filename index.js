@@ -93,5 +93,3 @@ function dealKlineData(data) {
 setInterval(() => {
     getKlineData();
 }, config.queryInterval);
-
-sendMail({ content: "start engine", subject: "开始搬砖" });
