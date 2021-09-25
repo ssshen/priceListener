@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const https = require("https");
 const config = require("./config.js");
+require("./number")
 
 let transporter = nodemailer.createTransport({
     service: "qq",
@@ -90,6 +91,55 @@ function dealKlineData(data) {
     console.log("current:", data[0].close);
 }
 
-setInterval(() => {
-    getKlineData();
-}, config.queryInterval);
+// setInterval(() => {
+//     getKlineData();
+// }, config.queryInterval);
+
+
+function getPositoString() {
+
+}
+
+const Binance = require('node-binance-api');
+const binance = new Binance().options({
+    APIKEY: '<key>',
+    APISECRET: '<secret>'
+});
+binance.futuresCandles("ETHUSDT", "4h").then(res => {
+
+    console.log("eth:", res[0], res[1])
+    console.log(getTRA(res)[0, 1])
+}).catch(error => {
+    console.log(error)
+})
+
+function getTRA(data) {
+    var TR = []
+    data.forEach((element, index) => {
+        if (index > 0) {
+            if (index == 1) {
+                console.log(Number(element[2]))
+                console.log(Number(element[2]).subtr(element[3]))
+                console.log(Number(element[2]).subtr(element[3]), Number(element[2]).subtr(data[index - 1][4]), Number(data[index - 1][4]).subtr(element[3]))
+            }
+            TR.push(Math.max(Number(element[2]).subtr(element[3]), Number(element[2]).subtr(data[index - 1][4]), Number(data[index - 1][4]).subtr(element[3])))
+        } else {
+            TR.push(Number(element[2]).subtr(element[3]))
+        }
+    });
+
+    return TR
+}
+
+
+console.log(Number(0.1).add(0.2))
+
+// https.get("https://api.binance.com/fapi/v1/exchangeInfo", res => {
+//     let data = "";
+//     res.on("data", trunk => {
+//         data += trunk;
+//     });
+//     res.on("end", () => {
+//         dealKlineData(JSON.parse(data).data);
+//     });
+// })
